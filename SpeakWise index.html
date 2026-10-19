@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeakWise AI</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1020;
+    color: #f5f7ff;
+    padding: 22px;
+  }
+  .app {
+    max-width: 480px;
+    margin: 20px auto;
+    background: #151d33;
+    border: 1px solid #2a3654;
+    border-radius: 22px;
+    padding: 22px;
+  }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #aebbd5; font-size: 14px; }
+  .teacher {
+    margin: 24px 0;
+    padding: 18px;
+    background: #202d49;
+    border-radius: 16px;
+    line-height: 1.6;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    border: 0;
+    border-radius: 12px;
+    margin: 7px 0;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary { background: #8b9cff; color: #10162b; }
+  .secondary { background: #2a3857; color: white; }
+  textarea {
+    width: 100%;
+    min-height: 100px;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 16px;
+    background: #0e1629;
+    color: white;
+    border: 1px solid #3b4b70;
+    margin-top: 12px;
+  }
+  #status { color: #aebbd5; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>SpeakWise AI 🎓</h1>
+  <p class="sub">Your personal English speaking practice</p>
+
+  <div class="teacher">
+    <strong>👩‍🏫 Your English Teacher</strong>
+    <p id="question">Hello! What do you usually do in your free time?</p>
+    <button class="secondary" onclick="speakQuestion()">🔊 Listen to Teacher</button>
+  </div>
+
+  <button class="primary" onclick="startListening()">🎙️ Speak Your Answer</button>
+  <textarea id="answer" placeholder="Your spoken answer will appear here..."></textarea>
+  <p id="status">Ready to practise!</p>
+  <button class="secondary" onclick="checkAnswer()">📝 Get Feedback</button>
+  <div class="teacher" id="feedback">Your feedback will appear here.</div>
+</div>
+
+<script>
+const question = document.getElementById("question");
+const answer = document.getElementById("answer");
+const statusText = document.getElementById("status");
+const feedback = document.getElementById("feedback");
+
+function speak(text, lang = "en-US") {
+  if (!("speechSynthesis" in window)) {
+    statusText.textContent = "Speech is not supported in this browser.";
+    return;
+  }
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  speechSynthesis.speak(utterance);
+}
+
+function speakQuestion() {
+  speak(question.textContent);
+}
+
+function startListening() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    statusText.textContent =
+      "Speech recognition is unavailable here. Try opening this page in Chrome.";
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  statusText.textContent = "Listening... Please speak in English.";
+
+  recognition.onresult = (event) => {
+    answer.value = event.results[0][0].transcript;
+    statusText.textContent = "Your answer was captured!";
+  };
+
+  recognition.onerror = (event) => {
+    statusText.textContent = "Microphone error: " + event.error;
+  };
+
+  recognition.onend = () => {
+    if (statusText.textContent === "Listening... Please speak in English.") {
+      statusText.textContent = "Listening ended. Try again if needed.";
+    }
+  };
+
+  recognition.start();
+}
+
+function checkAnswer() {
+  const text = answer.value.trim();
+
+  if (!text) {
+    feedback.textContent = "Please speak or type your answer first.";
+    return;
+  }
+
+  const lower = text.toLowerCase();
+  let message =
+    "Good effort! Keep practising. Try to answer using a complete English sentence.";
+
+  if (lower.includes("in my free time") || lower.includes("usually")) {
+    message =
+      "Nice attempt! You used useful phrases. Try adding one specific activity and a reason.";
+  } else if (text.split(/\s+/).length < 4) {
+    message =
+      "Good start! Try making a longer sentence. For example, say what you do and why you enjoy it.";
+  }
+
+  feedback.textContent = message;
+  speak(message);
+}
+</script>
+</body>
+</html>
